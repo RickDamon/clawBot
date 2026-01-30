@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  clawbot:
+    build: .
+    container_name: clawbot
+    restart: always
+    ports:
+      - "8686:8686"
+    volumes:
+      # Mount your workspace directory
+      - ./workspace:/workspace/clawd
+      # Persist clawdbot data
+      - clawbot-data:/root/.clawdbot
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:18789"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  clawbot-data:
