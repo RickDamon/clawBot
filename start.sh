@@ -1,0 +1,92 @@
+#!/bin/bash
+
+set -e
+
+mkdir -p ~/.clawdbot
+cp clawbot.json ~/.clawdbot/clawdbot.json
+
+cat > /etc/nginx/nginx.conf <<EOF
+worker_processes 1;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    map \$http_upgrade \$connection_upgrade {
+        default upgrade;
+        '' close;
+    }
+
+    map "\$http_upgrade\$arg_token" \$should_redirect {
+        default 0;
+        "" 1;
+    }
+
+    server {
+        listen 8686;
+        server_name _;
+
+        location = / {
+        if (\$should_redirect = 1) {
+            return 302 \$scheme://\$http_host/?token=${ACCESS_TOKEN};
+        }
+            proxy_pass http://127.0.0.1:18789/;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection \$connection_upgrade;
+
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_read_timeout 86400;
+            proxy_connect_timeout 86400;
+        }
+
+        location / {
+            proxy_pass http://127.0.0.1:18789/;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection \$connection_upgrade;
+
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_read_timeout 86400;
+            proxy_connect_timeout 86400;
+        }
+    }
+}
+EOF
+
+nginx
+
+
+clawdbot gateway --allow-unconfigured \
+  > clawdbot.log 2>&1 &
+
+PID=$!
+echo "[clawdbot] started, pid=$PID"
+
+for i in {1..120}; do
+  if curl -sf http://127.0.0.1:18789 >/dev/null; then
+    echo "[clawdbot] service is up"
+    exit 0
+  fi
+  sleep 1
+done
+
+echo "[clawdbot] startup timeout, last 50 lines of log:"
+tail -50 clawdbot.log
+exit 1

@@ -1,0 +1,21 @@
+{
+  "name": "clawbot",
+  "version": "1.0.0",
+  "description": "快速启动一个 ClawdBot 服务的 Docker 镜像。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RickDamon/clawBot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/RickDamon/clawBot/issues"
+  },
+  "homepage": "https://github.com/RickDamon/clawBot#readme"
+}
